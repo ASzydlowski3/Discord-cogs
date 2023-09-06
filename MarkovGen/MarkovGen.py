@@ -1,9 +1,10 @@
 import random
+import datetime
 import discord
 from discord.ext import tasks, commands
-import markovify
 from redbot.core import Config
 
+from .custom_markov import POSifiedText
 from .templates import gen_paulo, gen_gru, gen_komix, gen_demot
 from .cleaners import polish_remover, links_remover, emoji_remover, empty_lines_remover
 
@@ -34,7 +35,7 @@ class MarkovGen(commands.Cog):
     # Load data from files
     def load_data(self):
         self.sentences = self.load_text_data("sentences.txt")
-        self.model = markovify.Text(self.sentences)
+        self.model = POSifiedText(self.sentences)
         self.images = self.load_image_data("images.txt")
 
     # Load text data from a file
@@ -249,10 +250,11 @@ class MarkovGen(commands.Cog):
                 await message.pin()
 
     # Clean text files and update markov models with new data
-    @tasks.loop(seconds=43200)
+    @tasks.loop(seconds=1800)
     async def my_task(self):
-        await self.clean_and_refresh_data()
-        self.load_data()
+        if datetime.datetime.now().strftime("%a %H") == 'Wed 03':
+            await self.clean_and_refresh_data()
+            self.load_data()
 
     @my_task.before_loop
     async def before_my_task(self):

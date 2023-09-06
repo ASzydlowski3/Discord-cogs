@@ -5,7 +5,7 @@ import markovify
 from redbot.core import Config
 
 from .templates import gen_paulo, gen_gru, gen_komix, gen_demot
-from .cleaners import polish_remover, links_remover, emoji_remover
+from .cleaners import polish_remover, links_remover, emoji_remover, empty_lines_remover
 
 
 class MarkovGen(commands.Cog):
@@ -58,6 +58,7 @@ class MarkovGen(commands.Cog):
         await polish_remover(f"{self.workdir}sentences.txt")
         await links_remover(f"{self.workdir}sentences.txt")
         await emoji_remover(f"{self.workdir}sentences.txt")
+        await empty_lines_remover(f"{self.workdir}sentences.txt")
 
     # Choose a random image
     async def choose_random_image(self):

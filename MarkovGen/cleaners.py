@@ -68,3 +68,13 @@ async def emoji_remover(path):
             output_file.write(text_without_emojis)
     except:
         return
+
+
+async def empty_lines_remover(path):
+    def contains_alphabetical_characters(line):
+        return any(char.isalpha() for char in line)
+    with open(path, 'r', encoding='utf-8') as input_file:
+        lines = input_file.readlines()
+    non_empty_lines = [line for line in lines if contains_alphabetical_characters(line)]
+    with open(path, 'w', encoding='utf-8') as output_file:
+        output_file.writelines(non_empty_lines)

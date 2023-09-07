@@ -31,6 +31,14 @@ class MarkovGen(commands.Cog):
 
         # Start a background task using the my_task method
         self.my_task.start()
+        
+        
+        #PARAMETERS - max_chars/min_words/max_words
+        self.duszenie = (200, 10, 50)
+        self.demot = (60, 3, 10)
+        self.paulo = (100, 4, 15)
+        self.gru = (80, 6, 15)
+        self.komix = (25, 2, 6)
 
     # Load data from files
     def load_data(self):
@@ -68,11 +76,14 @@ class MarkovGen(commands.Cog):
             return image_url
 
     # Generate a markov chain
-    async def make_sentence(self, max_chars, min, max):
+    async def make_sentence(self, max_chars, min_words, max_words):
         new_sentence = None
-        while not new_sentence:
-            new_sentence = self.model.make_short_sentence(max_chars=max_chars, min_words=min, max_words=max)
+        counter = 0
+        while not new_sentence and counter < 1000:
+            counter += 1
+            new_sentence = self.model.make_short_sentence(max_chars=max_chars, min_words=min_words, max_words=max_words)
         return new_sentence
+
 
     async def cog_unload(self):
         self.my_task.cancel()
@@ -88,64 +99,101 @@ class MarkovGen(commands.Cog):
     @pykpyk.command()
     async def duszenie(self, ctx: commands.Context):
         if ctx.channel.id in self.allowed_channels:
-            max_chars = 200
-            min_words = 10
-            max_words = 50
+            max_chars, min_words, max_words = self.duszenie
             sentence = await self.make_sentence(max_chars, min_words, max_words)
-            await ctx.send(sentence)
+            if sentence:
+                await ctx.send(sentence)
+            else:
+                await ctx.send("Failed to generate")
 
     # Define a subcommand called "demot" under "pykpyk"
     @pykpyk.command()
     async def demot(self, ctx: commands.Context):
         if ctx.channel.id in self.allowed_channels:
-            max_chars = 60
-            min_words = 2
-            max_words = 8
+            max_chars, min_words, max_words = self.demot
             image_url = await self.choose_random_image()
             sentences = []
             for _ in range(2):
-                sentences.append(await self.make_sentence(max_chars, min_words, max_words))
+                sentence = await self.make_sentence(max_chars, min_words, max_words)
+                if sentence is None:
+                    await ctx.send("Failed to generate")
+                    return
+                sentences.append(sentence)
             await gen_demot(self.templates_path, image_url, *sentences)
             file = discord.File(fp=f"{self.templates_path}demot_meme.png")
             await ctx.send(file=file)
+
 
     # Define a subcommand called "paulo" under "pykpyk"
     @pykpyk.command()
     async def paulo(self, ctx: commands.Context):
         if ctx.channel.id in self.allowed_channels:
-            max_chars = 100
-            min_words = 4
-            max_words = 15
+            max_chars, min_words, max_words = self.paulo
             sentence = await self.make_sentence(max_chars, min_words, max_words)
-            await gen_paulo(self.templates_path, sentence)
-            file = discord.File(fp=f"{self.templates_path}paulo_meme.jpg")
-            await ctx.send(file=file)
+            if sentence:
+                await gen_paulo(self.templates_path, sentence)
+                file = discord.File(fp=f"{self.templates_path}paulo_meme.jpg")
+                await ctx.send(file=file)
+            else:
+                await ctx.send("Failed to generate")
+
+
 
     # Define a subcommand called "gru" under "pykpyk"
     @pykpyk.command()
     async def gru(self, ctx: commands.Context):
         if ctx.channel.id in self.allowed_channels:
-            max_chars = 80
-            min_words = 6
-            max_words = 15
+            max_chars, min_words, max_words = self.gru
             sentence = await self.make_sentence(max_chars, min_words, max_words)
-            await gen_gru(self.templates_path, sentence)
-            file = discord.File(fp=f"{self.templates_path}gru_meme.jpg")
-            await ctx.send(file=file)
+            if sentence:
+                await gen_gru(self.templates_path, sentence)
+                file = discord.File(fp=f"{self.templates_path}gru_meme.jpg")
+                await ctx.send(file=file)
+            else:
+                await ctx.send("Failed to generate")
+
 
     # Define a subcommand called "komix" under "pykpyk"
     @pykpyk.command()
     async def komix(self, ctx: commands.Context):
         if ctx.channel.id in self.allowed_channels:
-            max_chars = 25
-            min_words = 2
-            max_words = 6
+            max_chars, min_words, max_words = self.komix
             sentences = []
             for _ in range(4):
-                sentences.append(await self.make_sentence(max_chars, min_words, max_words))
+                sentence = await self.make_sentence(max_chars, min_words, max_words)
+                if sentence is None:
+                    await ctx.send("Failed to generate")
+                    return
+                sentences.append(sentence)
             await gen_komix(self.templates_path, *sentences)
             file = discord.File(fp=f"{self.templates_path}komix_meme.jpg")
             await ctx.send(file=file)
+
+
+    @commands.is_owner()
+    @pykpyk.command()
+    async def change(self, ctx: commands.Context, name: str, max_chars: int, min_words: int, max_words: int):
+        if ctx.channel.id in self.allowed_channels:
+            if name == 'duszenie':
+                self.duszenie = (max_chars, min_words, max_words)
+                await ctx.send(f'Parameters for {name} have been changed')
+            elif name == 'demot':
+                self.demot = (max_chars, min_words, max_words)
+                await ctx.send(f'Parameters for {name} have been changed')
+            elif name == 'paulo':
+                self.paulo = (max_chars, min_words, max_words)
+                await ctx.send(f'Parameters for {name} have been changed')
+            elif name == 'gru':
+                self.gru = (max_chars, min_words, max_words)
+                await ctx.send(f'Parameters for {name} have been changed')
+            elif name == 'komix':
+                self.komix = (max_chars, min_words, max_words)
+                await ctx.send(f'Parameters for {name} have been changed')
+            else:
+                await ctx.send('Wrong meme template')
+
+
+
 
     # Regenerate a text file containing text data for markov models
     @commands.is_owner()
@@ -246,7 +294,7 @@ class MarkovGen(commands.Cog):
                 async for user in reaction.users():
                     unique_users.add(user.id)
 
-            if len(unique_users) >= 7 and message.author.bot:
+            if len(unique_users) >= 6 and message.author.bot:
                 await message.pin()
 
     # Clean text files and update markov models with new data
